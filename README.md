@@ -1,3 +1,3 @@
-# ethereum
+# Ethereum
 
 Musings with Ethereum
