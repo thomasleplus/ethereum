@@ -21,9 +21,9 @@ jobs:
         shell: bash
         run: |
           pip3 install slither-analyzer==0.11.3
-    	  msg="$(pip3 list --outdated | grep -i -e '^slither-analyzer ' || true)"
-   	  if [ -n "${msg}" ]; then
-       	    >&2 echo "ERROR: outdated: ${msg}" ;
+          msg="$(pip3 list --outdated | grep -i -e '^slither-analyzer ' || true)"
+          if [ -n "${msg}" ]; then
+            >&2 echo "ERROR: outdated: ${msg}" ;
             exit 1 ;
           fi
           slither .
