@@ -2,7 +2,7 @@
 
 Musings with Ethereum smart contracts.
 
-> ![!WARNING]
+> [!WARNING]
 > The code in this repo was written for educational purpose only. It
 > is not fit for any purpose and if you choose to use it in any way,
 > you are  doing so at your own risk and sole responsibility.
