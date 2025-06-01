@@ -24,6 +24,7 @@ contract GiftCard {
     error OnlyOriginalSenderCanRefund();
     error InsufficientBalance();
     error InvalidAmount();
+    error InvalidBalance();
     error TransferFailed();
     error ReentrancyGuardActive();
     error ContractHasInsufficientEther();
