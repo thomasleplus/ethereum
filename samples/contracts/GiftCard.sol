@@ -25,6 +25,7 @@ contract GiftCard {
     error InsufficientBalance();
     error InvalidAmount();
     error InvalidBalance();
+    error InvalidRecipient();
     error TransferFailed();
     error ReentrancyGuardActive();
     error ContractHasInsufficientEther();
@@ -40,15 +41,20 @@ contract GiftCard {
         _;
     }
     
+    modifier validAmount(uint256 amount) {
+        if (amount == 0) revert InvalidAmount();
+        if (amount > balance) revert InsufficientBalance();
+        _;
+    }
+    
     modifier validBalance() {
         if (balance != address(this).balance) revert InvalidBalance();
         if (balance == 0) revert InsufficientBalance();
         _;
     }
     
-    modifier validAmount(uint256 amount) {
-        if (amount == 0) revert InvalidAmount();
-        if (amount > balance) revert InsufficientBalance();
+    modifier validRecipient(address recipient) {
+        if (recipient == address(0)) revert InvalidRecipient();
         _;
     }
     
@@ -63,8 +69,7 @@ contract GiftCard {
      * @dev Constructor to create a gift card
      * @param recipient The address that can spend the gift card
      */
-    constructor(address recipient) payable {
-        if (recipient == address(0)) revert InvalidAmount();
+    constructor(address recipient) payable validRecipient(recipient) {
         if (msg.value == 0) revert InvalidAmount();
         
         balance = msg.value;
@@ -95,13 +100,12 @@ contract GiftCard {
     function spend(address recipient, uint256 amount) 
         external 
         onlyRecipient 
+        validRecipient(recipient) 
         validBalance 
         validAmount(amount) 
         nonReentrant 
         returns (bool success) 
     {
-        if (recipient == address(0)) revert InvalidAmount();
-        
         balance -= amount;
         _safeTransfer(recipient, amount);
         
@@ -114,9 +118,7 @@ contract GiftCard {
      * @param recipient Address to send all remaining Ether to
      * @return success True if the transaction succeeded
      */
-    function spendAll(address recipient) external onlyRecipient validBalance nonReentrant returns (bool success) {
-        if (recipient == address(0)) revert InvalidAmount();
-        
+    function spendAll(address recipient) external onlyRecipient validRecipient(recipient) validBalance nonReentrant returns (bool success) {
         uint256 amountToSpend = balance;
         balance = 0;
         _safeTransfer(recipient, amountToSpend);
