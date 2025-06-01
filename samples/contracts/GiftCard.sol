@@ -3,7 +3,8 @@ pragma solidity 0.8.30;
 
 /**
  * @title Gift Card
- * @dev A secure gift card contract that allows creating, spending, and refunding Ether-based gift cards
+ * @notice WARNING: written for educational purposes only and not fit for any purpose so if you choose to use it in any way, you are doing so at your own risk and sole responsibility.
+ * @dev A gift card contract that allows creating, spending, and refunding Ether-based gift cards
  * @author Thomas Leplus
  */
 contract GiftCard {
