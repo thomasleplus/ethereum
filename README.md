@@ -1,6 +1,6 @@
 # Ethereum
 
-[![Solc](https://github.com/thomasleplus/ristretto/workflows/Solc/badge.svg)](https://github.com/thomasleplus/ristretto/actions?query=workflow:"Solc")
+[![Solc](https://github.com/thomasleplus/ethereum/workflows/Solc/badge.svg)](https://github.com/thomasleplus/ethereum/actions?query=workflow:"Solc")
 
 Musings with Ethereum smart contracts.
 
