@@ -2,9 +2,9 @@
 pragma solidity 0.8.30;
 
 /**
- * @title GiftCard
+ * @title Gift Card
  * @dev A secure gift card contract that allows creating, spending, and refunding Ether-based gift cards
- * @author Updated for modern Solidity practices
+ * @author Thomas Leplus
  */
 contract GiftCard {
     // State variables
