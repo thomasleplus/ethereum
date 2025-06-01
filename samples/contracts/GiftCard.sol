@@ -81,7 +81,7 @@ contract GiftCard {
      */
     function _safeTransfer(address recipient, uint256 amount) internal {
         if (address(this).balance < amount) revert ContractHasInsufficientEther();
-        
+        //slither-disable-next-line low-level-calls,functions-that-send-ether-to-arbitrary-destinations
         (bool success, ) = payable(recipient).call{value: amount}("");
         if (!success) revert TransferFailed();
     }
@@ -190,6 +190,7 @@ contract GiftCard {
      * @return True if gift card balance matches contract's Ether balance
      */
     function isBalanceConsistent() external view returns (bool) {
+        //slither-disable-next-line dangerous-strict-equalities
         return balance == address(this).balance;
     }
     
