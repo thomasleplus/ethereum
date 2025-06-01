@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.19;
+pragma solidity 0.8.30;
 
 /**
  * @title GiftCard
@@ -22,7 +22,7 @@ contract GiftCard {
     // Custom errors (gas efficient)
     error OnlyRecipientCanSpend();
     error OnlyOriginalSenderCanRefund();
-    error InsufficientGiftCardBalance();
+    error InsufficientBalance();
     error InvalidAmount();
     error TransferFailed();
     error ReentrancyGuardActive();
@@ -39,9 +39,15 @@ contract GiftCard {
         _;
     }
     
+    modifier validBalance() {
+        if (balance != address(this).balance) revert InvalidBalance();
+        if (balance == 0) revert InsufficientBalance();
+        _;
+    }
+    
     modifier validAmount(uint256 amount) {
         if (amount == 0) revert InvalidAmount();
-        if (amount > balance) revert InsufficientGiftCardBalance();
+        if (amount > balance) revert InsufficientBalance();
         _;
     }
     
@@ -88,6 +94,7 @@ contract GiftCard {
     function spend(address recipient, uint256 amount) 
         external 
         onlyRecipient 
+        validBalance 
         validAmount(amount) 
         nonReentrant 
         returns (bool success) 
@@ -106,9 +113,8 @@ contract GiftCard {
      * @param recipient Address to send all remaining Ether to
      * @return success True if the transaction succeeded
      */
-    function spendAll(address recipient) external onlyRecipient nonReentrant returns (bool success) {
+    function spendAll(address recipient) external onlyRecipient validBalance nonReentrant returns (bool success) {
         if (recipient == address(0)) revert InvalidAmount();
-        if (balance == 0) revert InsufficientGiftCardBalance();
         
         uint256 amountToSpend = balance;
         balance = 0;
@@ -123,7 +129,7 @@ contract GiftCard {
      * @param amount Amount to withdraw (in wei)
      * @return success True if the transaction succeeded
      */
-    function withdraw(uint256 amount) external onlyRecipient validAmount(amount) nonReentrant returns (bool success) {
+    function withdraw(uint256 amount) external onlyRecipient validBalance validAmount(amount) nonReentrant returns (bool success) {
         balance -= amount;
         _safeTransfer(msg.sender, amount);
         
@@ -135,9 +141,7 @@ contract GiftCard {
      * @dev Withdraw all remaining balance to the recipient's own address
      * @return success True if the transaction succeeded
      */
-    function withdrawAll() external onlyRecipient nonReentrant returns (bool success) {
-        if (balance == 0) revert InsufficientGiftCardBalance();
-        
+    function withdrawAll() external onlyRecipient validBalance nonReentrant returns (bool success) {
         uint256 amountToWithdraw = balance;
         balance = 0;
         _safeTransfer(msg.sender, amountToWithdraw);
@@ -151,7 +155,7 @@ contract GiftCard {
      * @param amount Amount to refund (in wei)
      * @return success True if the transaction succeeded
      */
-    function refund(uint256 amount) external onlyOriginalSender validAmount(amount) nonReentrant returns (bool success) {
+    function refund(uint256 amount) external onlyOriginalSender validBalance validAmount(amount) nonReentrant returns (bool success) {
         balance -= amount;
         _safeTransfer(from, amount);
         
@@ -163,9 +167,7 @@ contract GiftCard {
      * @dev Refund all remaining balance back to the original sender
      * @return success True if the transaction succeeded
      */
-    function refundAll() external onlyOriginalSender nonReentrant returns (bool success) {
-        if (balance == 0) revert InsufficientGiftCardBalance();
-        
+    function refundAll() external onlyOriginalSender validBalance nonReentrant returns (bool success) {
         uint256 amountToRefund = balance;
         balance = 0;
         _safeTransfer(from, amountToRefund);
