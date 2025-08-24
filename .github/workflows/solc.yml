@@ -20,25 +20,33 @@ jobs:
       - name: Install Solc
         shell: bash
         run: |
-          npm install --global solc@0.8.30
+          set -euo pipefail
+          IFS=$'\n\t'
+          sudo npm install --global solc@0.8.30
+          sudo npm outdated --global
       - name: Install Slither
         shell: bash
         run: |
-          pip3 install slither-analyzer==0.11.3
-          msg="$(pip3 list --outdated | grep -i -e '^slither-analyzer ' || true)"
-          if [ -n "${msg}" ]; then
-            >&2 echo "ERROR: outdated: ${msg}" ;
-            exit 1 ;
+          set -euo pipefail
+          IFS=$'\n\t'
+          sudo pipx ensurepath --global
+          sudo pipx install --global slither-analyzer==0.11.3
+          if sudo pipx upgrade-all --global | tee -a /dev/stderr | grep -q -e .; then
+            exit 1
           fi
       - name: Run Slither
         shell: bash
         run: |
+          set -euo pipefail
+          IFS=$'\n\t'
           for file in $(find . -name '*.sol' -type f); do
             slither "${file}"
           done
       - name: Build
         shell: bash
         run: |
+          set -euo pipefail
+          IFS=$'\n\t'
           for file in $(find . -name '*.sol' -type f); do
             solc "${file}"
           done
