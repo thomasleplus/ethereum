@@ -22,8 +22,8 @@ jobs:
         run: |
           set -euo pipefail
           IFS=$'\n\t'
-          sudo npm install --global solc@0.8.30
-          if sudo npm outdated --global | tee -a /dev/stderr | grep -q -e '^solc'; then
+          npm install solc@0.8.30
+          if npm outdated | tee -a /dev/stderr | grep -q -e '^solc'; then
             exit 1
           fi
       - name: Install Slither
@@ -31,9 +31,9 @@ jobs:
         run: |
           set -euo pipefail
           IFS=$'\n\t'
-          sudo pipx ensurepath --global
-          sudo pipx install --global slither-analyzer==0.11.3
-          if sudo pipx upgrade slither-analyzer --global | tee -a /dev/stderr | grep -q -e '^upgraded '; then
+          pipx ensurepath
+          pipx install slither-analyzer==0.11.3
+          if pipx upgrade slither-analyzer | tee -a /dev/stderr | grep -q -e '^upgraded '; then
             exit 1
           fi
       - name: Run Slither
@@ -42,7 +42,7 @@ jobs:
           set -euo pipefail
           IFS=$'\n\t'
           for file in $(find . -name '*.sol' -type f); do
-            slither "${file}"
+            slither --solc "$(npm root)/.bin/solc" "${file}"
           done
       - name: Build
         shell: bash
@@ -50,5 +50,5 @@ jobs:
           set -euo pipefail
           IFS=$'\n\t'
           for file in $(find . -name '*.sol' -type f); do
-            solc "${file}"
+            "$(npm root)/.bin/solc" "${file}"
           done
