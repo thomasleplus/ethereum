@@ -32,6 +32,7 @@ jobs:
           set -euo pipefail
           IFS=$'\n\t'
           sudo pipx ensurepath --global
+          pipx ensurepath
           sudo pipx install --global slither-analyzer==0.11.3
           if sudo pipx upgrade slither-analyzer --global | tee -a /dev/stderr | grep -q -e '^upgraded '; then
             exit 1
