@@ -45,7 +45,6 @@ jobs:
         run: |
           set -euo pipefail
           IFS=$'\n\t'
-          ls -al "$(npm root)/.bin/"
           for file in $(find . -name '*.sol' -type f); do
             slither "${file}"
           done
