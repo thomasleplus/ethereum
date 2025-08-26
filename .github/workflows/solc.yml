@@ -22,8 +22,12 @@ jobs:
         run: |
           set -euo pipefail
           IFS=$'\n\t'
-          npm install solc@0.8.30
-          if npm outdated | tee -a /dev/stderr | grep -q -e '^solc'; then
+          sudo apt-get update
+	  sudo apt-get install -y software-properties-common
+          sudo add-apt-repository -y ppa:ethereum/ethereum
+          sudo apt-get update
+          sudo apt-get install -y solc=0.8.30
+          if sudo apt-get -s upgrade solc | tee -a /dev/stderr | grep -q -e "^Inst "; then
             exit 1
           fi
       - name: Install Slither
@@ -43,7 +47,7 @@ jobs:
           IFS=$'\n\t'
           ls -al "$(npm root)/.bin/"
           for file in $(find . -name '*.sol' -type f); do
-            slither --solc "$(npm root)/.bin/solc" "${file}"
+            slither "${file}"
           done
       - name: Build
         shell: bash
@@ -51,5 +55,5 @@ jobs:
           set -euo pipefail
           IFS=$'\n\t'
           for file in $(find . -name '*.sol' -type f); do
-            "$(npm root)/.bin/solc" "${file}"
+            solc "${file}"
           done
