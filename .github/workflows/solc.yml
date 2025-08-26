@@ -26,7 +26,7 @@ jobs:
           sudo apt-get install -y software-properties-common
           sudo add-apt-repository -y ppa:ethereum/ethereum
           sudo apt-get update
-          sudo apt-get install -y solc #FIXME =0.8.30
+          sudo apt-get install -y solc=1:0.8.30-0ubuntu1~noble
           if sudo apt-get -s upgrade solc | tee -a /dev/stderr | grep -q -e "^Inst "; then
             exit 1
           fi
