@@ -47,14 +47,10 @@ jobs:
         run: |
           set -euo pipefail
           IFS=$'\n\t'
-          for file in $(find . -name '*.sol' -type f); do
-            slither "${file}"
-          done
+          find . -name '*.sol' -type f -print -exec slither {} \;
       - name: Build
         shell: bash
         run: |
           set -euo pipefail
           IFS=$'\n\t'
-          for file in $(find . -name '*.sol' -type f); do
-            solc "${file}"
-          done
+          find . -name '*.sol' -type f -print -exec solc {} \;

@@ -13,6 +13,7 @@ Musings with Ethereum smart contracts.
 
 A simple contract emulating a gift card. The properties of the gift
 card are different from those of a typical physical gift card:
+
 - The gift card is registered: the receiver of the gift card is set by
   the giver once and for all and cannot be changed (whereas physical
   gift cards are typically considered owned by whomever is the bearer
