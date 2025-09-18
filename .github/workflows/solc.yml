@@ -11,7 +11,7 @@ on:
 permissions: {}
 
 jobs:
-  build:
+  solc:
     name: Build with Solc
     runs-on: ubuntu-latest
     steps:
