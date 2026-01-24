@@ -39,7 +39,7 @@ jobs:
           set -euo pipefail
           IFS=$'\n\t'
           pipx ensurepath
-          pipx install slither-analyzer==0.11.3
+          pipx install slither-analyzer==0.11.5
           if pipx upgrade slither-analyzer | tee -a /dev/stderr | grep -q -e '^upgraded '; then
             exit 1
           fi
