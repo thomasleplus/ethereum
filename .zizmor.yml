@@ -8,6 +8,7 @@ rules:
         - aws-actions/*
         - docker/*
         - github/*
+        - foundry-rs/foundry-toolchain
         - google-github-actions/*
         - google/*
         - googleapis/*
