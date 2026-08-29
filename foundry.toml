@@ -1,0 +1,6 @@
+[profile.default]
+src = "samples/contracts"
+test = "test"
+out = "out"
+libs = ["lib"]
+solc = "0.8.30"
