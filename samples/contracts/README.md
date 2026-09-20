@@ -20,11 +20,11 @@ rather than a gift card you would actually use.
 
 ### Actors
 
-| Actor | Stored as | Can |
-| --- | --- | --- |
-| Giver | `address public immutable from` | Refund part or all of the balance to itself |
-| Receiver | `address public immutable to` | Withdraw to itself, or pay any address it chooses |
-| Anyone else | — | Read the views. Nothing else. |
+| Actor       | Stored as                       | Can                                               |
+| ----------- | ------------------------------- | ------------------------------------------------- |
+| Giver       | `address public immutable from` | Refund part or all of the balance to itself       |
+| Receiver    | `address public immutable to`   | Withdraw to itself, or pay any address it chooses |
+| Anyone else | —                               | Read the views. Nothing else.                     |
 
 Both principals are `immutable`: they are written into the deployed
 bytecode at construction and there is no code path that can change
@@ -34,18 +34,18 @@ hook to abuse.
 ### Entry points
 
 Every state-changing function carries an explicit modifier chain. The
-chain *is* the security model, so it is worth reading as a table:
+chain _is_ the security model, so it is worth reading as a table:
 
-| Function | Caller | Modifiers |
-| --- | --- | --- |
+| Function                                   | Caller   | Modifiers                                                                    |
+| ------------------------------------------ | -------- | ---------------------------------------------------------------------------- |
 | `spend(address recipient, uint256 amount)` | receiver | `onlyRecipient` `validRecipient` `validBalance` `validAmount` `nonReentrant` |
-| `spendAll(address recipient)` | receiver | `onlyRecipient` `validRecipient` `validBalance` `nonReentrant` |
-| `withdraw(uint256 amount)` | receiver | `onlyRecipient` `validBalance` `validAmount` `nonReentrant` |
-| `withdrawAll()` | receiver | `onlyRecipient` `validBalance` `nonReentrant` |
-| `refund(uint256 amount)` | giver | `onlyOriginalSender` `validBalance` `validAmount` `nonReentrant` |
-| `refundAll()` | giver | `onlyOriginalSender` `validBalance` `nonReentrant` |
-| `getContractBalance()` | anyone | `view` |
-| `isBalanceConsistent()` | anyone | `view` |
+| `spendAll(address recipient)`              | receiver | `onlyRecipient` `validRecipient` `validBalance` `nonReentrant`               |
+| `withdraw(uint256 amount)`                 | receiver | `onlyRecipient` `validBalance` `validAmount` `nonReentrant`                  |
+| `withdrawAll()`                            | receiver | `onlyRecipient` `validBalance` `nonReentrant`                                |
+| `refund(uint256 amount)`                   | giver    | `onlyOriginalSender` `validBalance` `validAmount` `nonReentrant`             |
+| `refundAll()`                              | giver    | `onlyOriginalSender` `validBalance` `nonReentrant`                           |
+| `getContractBalance()`                     | anyone   | `view`                                                                       |
+| `isBalanceConsistent()`                    | anyone   | `view`                                                                       |
 
 `constructor(address recipient) payable` is guarded by
 `validRecipient` and rejects a zero `msg.value`: a card cannot be
@@ -58,7 +58,7 @@ created empty or pointed at the zero address.
 `onlyRecipient` and `onlyOriginalSender` compare `msg.sender` against
 the two immutables. Every one of the six state-changing functions
 carries exactly one of them, so there is no unguarded path that moves
-Ether. `spend` and `spendAll` let the receiver choose *where* the money
+Ether. `spend` and `spendAll` let the receiver choose _where_ the money
 goes, but only the receiver can trigger them.
 
 ### Input validation
@@ -72,7 +72,7 @@ goes, but only the receiver can trigger them.
 ### Reentrancy protection
 
 `nonReentrant` is a contract-wide guard, not a per-function one, so it
-blocks *cross-function* reentrancy: a callee that re-enters
+blocks _cross-function_ reentrancy: a callee that re-enters
 `refundAll()` from inside the external call made by `withdraw()` hits
 the same flag and reverts with `ReentrancyGuardActive()`.
 
@@ -92,7 +92,7 @@ only storage slot. This requires an EVM at Cancun or later — see
 
 ### Checks-Effects-Interactions
 
-Every function zeroes or decrements `balance` *before* calling out:
+Every function zeroes or decrements `balance` _before_ calling out:
 
 ```solidity
 uint256 amountToWithdraw = balance;
@@ -135,7 +135,7 @@ this repo's invariant suite was what surfaced it.
 With the solvency check, force-fed Ether is a harmless surplus. The
 card keeps working on `balance` as usual; the surplus is simply
 unreachable and is never paid out. `isBalanceConsistent()` still
-reports the strict equality, so the surplus is *observable* — it just
+reports the strict equality, so the surplus is _observable_ — it just
 has no effect on the card.
 
 ### Rejecting stray Ether and unknown calls
@@ -165,12 +165,12 @@ indexed for filtering.
 
 The contract uses exactly **one** storage slot:
 
-| Slot | Variable | Notes |
-| --- | --- | --- |
-| 0 | `uint256 public balance` | The only persistent state |
-| — | `address public immutable from` | In bytecode, not storage |
-| — | `address public immutable to` | In bytecode, not storage |
-| — | `bool private transient locked` | Transient storage (EIP-1153) |
+| Slot | Variable                        | Notes                        |
+| ---- | ------------------------------- | ---------------------------- |
+| 0    | `uint256 public balance`        | The only persistent state    |
+| —    | `address public immutable from` | In bytecode, not storage     |
+| —    | `address public immutable to`   | In bytecode, not storage     |
+| —    | `bool private transient locked` | Transient storage (EIP-1153) |
 
 Two `address` values plus a `bool` would normally pack into one further
 slot; making the addresses `immutable` and the guard `transient`
@@ -181,12 +181,12 @@ follows, via `forge test --gas-report` (averages, including the 21,000
 gas intrinsic transaction cost and capped EIP-3529 refunds, which is
 why the relative savings differ per function):
 
-| Function | Storage guard | Transient guard | Change |
-| --- | --- | --- | --- |
-| `withdrawAll` | 46,452 | 31,364 | −32% |
-| `refundAll` | 46,418 | 31,322 | −33% |
-| `withdraw` | 47,128 | 37,009 | −21% |
-| `spend` | 69,438 | 64,897 | −7% |
+| Function      | Storage guard | Transient guard | Change |
+| ------------- | ------------- | --------------- | ------ |
+| `withdrawAll` | 46,452        | 31,364          | −32%   |
+| `refundAll`   | 46,418        | 31,322          | −33%   |
+| `withdraw`    | 47,128        | 37,009          | −21%   |
+| `spend`       | 69,438        | 64,897          | −7%    |
 
 ## Testing
 
@@ -197,12 +197,12 @@ forge install foundry-rs/forge-std
 forge test -vvv
 ```
 
-| Suite | File | Tests |
-| --- | --- | --- |
-| Unit | [`test/GiftCard.t.sol`](../../test/GiftCard.t.sol) | 12 |
-| Security | [`test/GiftCard.security.t.sol`](../../test/GiftCard.security.t.sol) | 6 |
-| Invariants | [`test/GiftCard.invariants.t.sol`](../../test/GiftCard.invariants.t.sol) | 9 |
-| Invariants, force-fed | [`test/GiftCard.invariants.t.sol`](../../test/GiftCard.invariants.t.sol) | 8 |
+| Suite                 | File                                                                     | Tests |
+| --------------------- | ------------------------------------------------------------------------ | ----- |
+| Unit                  | [`test/GiftCard.t.sol`](../../test/GiftCard.t.sol)                       | 12    |
+| Security              | [`test/GiftCard.security.t.sol`](../../test/GiftCard.security.t.sol)     | 6     |
+| Invariants            | [`test/GiftCard.invariants.t.sol`](../../test/GiftCard.invariants.t.sol) | 9     |
+| Invariants, force-fed | [`test/GiftCard.invariants.t.sol`](../../test/GiftCard.invariants.t.sol) | 8     |
 
 ### Unit tests
 
@@ -218,7 +218,7 @@ contract:
 
 - `testReentrantWithdrawIsBlocked` — a malicious receiver re-enters
   `withdraw` from its `receive()`.
-- `testCrossFunctionReentrancyIsBlocked` — it re-enters a *different*
+- `testCrossFunctionReentrancyIsBlocked` — it re-enters a _different_
   entry point, proving the guard is contract-wide.
 - `testReentrancyIsRejectedByTheGuardItself` — asserts the revert data
   is exactly `ReentrancyGuardActive()`, so the test cannot pass because
@@ -232,7 +232,7 @@ contract:
 ### Stateful invariant suites
 
 Unit tests assert what happens along known paths. The invariant suites
-assert what must remain true after *any* path: Foundry assembles
+assert what must remain true after _any_ path: Foundry assembles
 random sequences of calls from random actors and re-checks every
 invariant after each one. Configured in
 [`foundry.toml`](../../foundry.toml) at **128 runs × 128 depth** with
@@ -252,14 +252,14 @@ spending ~98% of their calls on an empty contract.
 
 Holding under every scenario:
 
-| Invariant | Property |
-| --- | --- |
-| `invariant_cardIsSolvent` | A card never owes more than it holds |
-| `invariant_etherIsConserved` | Every wei is still in a card, paid out, refunded, or stranded in a retired card |
-| `invariant_payoutsNeverExceedDeposits` | A card only pays out Ether that was deposited into it |
-| `invariant_cardIsAlwaysDrainable` | A funded card can *always* be emptied by its receiver |
-| `invariant_onlyPrincipalsMoveFunds` | No stranger ever moved funds; no plain transfer was accepted |
-| `invariant_principalsAreImmutable` | Giver and receiver never change |
+| Invariant                              | Property                                                                        |
+| -------------------------------------- | ------------------------------------------------------------------------------- |
+| `invariant_cardIsSolvent`              | A card never owes more than it holds                                            |
+| `invariant_etherIsConserved`           | Every wei is still in a card, paid out, refunded, or stranded in a retired card |
+| `invariant_payoutsNeverExceedDeposits` | A card only pays out Ether that was deposited into it                           |
+| `invariant_cardIsAlwaysDrainable`      | A funded card can _always_ be emptied by its receiver                           |
+| `invariant_onlyPrincipalsMoveFunds`    | No stranger ever moved funds; no plain transfer was accepted                    |
+| `invariant_principalsAreImmutable`     | Giver and receiver never change                                                 |
 
 `invariant_cardIsAlwaysDrainable` is the strongest of these. Rather
 than re-implementing the contract's preconditions and asserting they
@@ -271,18 +271,18 @@ strict-equality balance check that one wei used to defeat.
 
 Additionally, when nothing is force-fed:
 
-| Invariant | Property |
-| --- | --- |
+| Invariant                     | Property                                       |
+| ----------------------------- | ---------------------------------------------- |
 | `invariant_accountingIsExact` | `balance` matches the real Ether held, exactly |
-| `invariant_balanceNeverGrows` | No top-up path exists |
-| `invariant_noEtherIsStranded` | Normal use never leaves Ether unreachable |
+| `invariant_balanceNeverGrows` | No top-up path exists                          |
+| `invariant_noEtherIsStranded` | Normal use never leaves Ether unreachable      |
 
 And under force-feeding:
 
-| Invariant | Property |
-| --- | --- |
-| `invariant_donationsOnlyAddSurplus` | Force-fed Ether can never make a card insolvent |
-| `invariant_donationsAreNeverPaidOut` | Force-fed Ether never becomes spendable |
+| Invariant                            | Property                                        |
+| ------------------------------------ | ----------------------------------------------- |
+| `invariant_donationsOnlyAddSurplus`  | Force-fed Ether can never make a card insolvent |
+| `invariant_donationsAreNeverPaidOut` | Force-fed Ether never becomes spendable         |
 
 ### Mutation testing
 
@@ -290,11 +290,11 @@ A test suite that has never failed is not evidence of anything, so
 each safeguard was verified by deliberately breaking the contract and
 confirming the suites catch it:
 
-| Mutation | Result |
-| --- | --- |
-| `balance -= amount / 2` in `withdraw` | 44 failures in the new suites; the unit tests caught it only via one hardcoded assertion (11/12 passed) |
-| `nonReentrant` removed from `withdraw` | The 3 reentrancy tests fail — but **all 12 unit tests still passed**, i.e. the bug was invisible to them |
-| Strict `balance == address(this).balance` restored | The force-fed suite fails 8/8 plus 2 security tests, while the other suites correctly still pass |
+| Mutation                                           | Result                                                                                                   |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `balance -= amount / 2` in `withdraw`              | 44 failures in the new suites; the unit tests caught it only via one hardcoded assertion (11/12 passed)  |
+| `nonReentrant` removed from `withdraw`             | The 3 reentrancy tests fail — but **all 12 unit tests still passed**, i.e. the bug was invisible to them |
+| Strict `balance == address(this).balance` restored | The force-fed suite fails 8/8 plus 2 security tests, while the other suites correctly still pass         |
 
 The middle row is the point of the exercise: a reentrancy hole is
 exactly the kind of bug that traditional unit tests cannot see,
@@ -309,10 +309,10 @@ the deliberate strict equality in `isBalanceConsistent()`.
 
 ### CI
 
-| Workflow | Does |
-| --- | --- |
-| `Foundry` | Installs Foundry and forge-std, runs `forge test` |
-| `Solc` | Compiles every `.sol` with `solc` 0.8.30 and runs Slither |
+| Workflow  | Does                                                      |
+| --------- | --------------------------------------------------------- |
+| `Foundry` | Installs Foundry and forge-std, runs `forge test`         |
+| `Solc`    | Compiles every `.sol` with `solc` 0.8.30 and runs Slither |
 
 ## Requirements
 

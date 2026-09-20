@@ -73,18 +73,27 @@ contract GiftCardSecurityTest is Test {
     // -------------------------------------------------------------------------
 
     /**
-     * @notice A receiver that re-enters `withdraw` while being paid cannot double-spend.
-     * @dev The outer call withdraws half the card, so at callback time the card still holds
-     *      exactly what it thinks it holds: without the guard the inner `withdraw` would pass
-     *      every check and drain the rest.
+     * @notice Runs the canonical attack: a 1 ether card held by a reentrant receiver, which calls
+     *         back with `reentryPayload` while being paid by an outer withdrawal of half the card.
+     * @dev Only half is withdrawn so that at callback time the card still holds exactly what it
+     *      thinks it holds: without the guard the reentrant call would pass every check.
      */
-    function testReentrantWithdrawIsBlocked() public {
-        ReentrantRecipient attacker = new ReentrantRecipient();
-        GiftCard card = _newCard(address(attacker), 1 ether);
-        attacker.arm(card, abi.encodeCall(GiftCard.withdraw, (0.5 ether)));
+    function _attack(bytes memory reentryPayload)
+        internal
+        returns (ReentrantRecipient attacker, GiftCard card, bool accepted)
+    {
+        attacker = new ReentrantRecipient();
+        card = _newCard(address(attacker), 1 ether);
+        attacker.arm(card, reentryPayload);
 
         vm.prank(address(attacker));
-        bool accepted = attacker.pull(abi.encodeCall(GiftCard.withdraw, (0.5 ether)));
+        accepted = attacker.pull(abi.encodeCall(GiftCard.withdraw, (0.5 ether)));
+    }
+
+    /// @notice A receiver that re-enters `withdraw` while being paid cannot double-spend.
+    function testReentrantWithdrawIsBlocked() public {
+        (ReentrantRecipient attacker, GiftCard card, bool accepted) =
+            _attack(abi.encodeCall(GiftCard.withdraw, (0.5 ether)));
 
         assertTrue(accepted, "outer withdrawal should succeed");
         assertEq(attacker.reentryAttempts(), 1, "callback did not fire");
@@ -96,12 +105,7 @@ contract GiftCardSecurityTest is Test {
 
     /// @notice Re-entering a *different* entry point is blocked too: the guard is contract-wide.
     function testCrossFunctionReentrancyIsBlocked() public {
-        ReentrantRecipient attacker = new ReentrantRecipient();
-        GiftCard card = _newCard(address(attacker), 1 ether);
-        attacker.arm(card, abi.encodeCall(GiftCard.spend, (payee, 0.5 ether)));
-
-        vm.prank(address(attacker));
-        attacker.pull(abi.encodeCall(GiftCard.withdraw, (0.5 ether)));
+        (ReentrantRecipient attacker, GiftCard card,) = _attack(abi.encodeCall(GiftCard.spend, (payee, 0.5 ether)));
 
         assertFalse(attacker.reentrySucceeded(), "reentrant spend was allowed");
         assertEq(payee.balance, 0, "payee was paid during a reentrant call");
@@ -116,12 +120,7 @@ contract GiftCardSecurityTest is Test {
      *      `nonReentrant`, whereas an amount or balance check would surface a different error.
      */
     function testReentrancyIsRejectedByTheGuardItself() public {
-        ReentrantRecipient attacker = new ReentrantRecipient();
-        GiftCard card = _newCard(address(attacker), 1 ether);
-        attacker.arm(card, abi.encodeCall(GiftCard.withdraw, (0.5 ether)));
-
-        vm.prank(address(attacker));
-        attacker.pull(abi.encodeCall(GiftCard.withdraw, (0.5 ether)));
+        (ReentrantRecipient attacker, GiftCard card,) = _attack(abi.encodeCall(GiftCard.withdraw, (0.5 ether)));
 
         assertEq(
             attacker.reentryRevertData(),
@@ -147,12 +146,7 @@ contract GiftCardSecurityTest is Test {
      *      transient storage: a plain `bool` guard would show up as 1 in slot 1 right there.
      */
     function testGuardUsesNoStorageSlot() public {
-        ReentrantRecipient attacker = new ReentrantRecipient();
-        GiftCard card = _newCard(address(attacker), 1 ether);
-        attacker.arm(card, abi.encodeCall(GiftCard.withdraw, (0.5 ether)));
-
-        vm.prank(address(attacker));
-        attacker.pull(abi.encodeCall(GiftCard.withdraw, (0.5 ether)));
+        (ReentrantRecipient attacker, GiftCard card,) = _attack(abi.encodeCall(GiftCard.withdraw, (0.5 ether)));
 
         assertEq(attacker.reentryAttempts(), 1, "callback did not fire");
         assertEq(uint256(attacker.guardSlotDuringCallback()), 0, "guard occupies a storage slot");
