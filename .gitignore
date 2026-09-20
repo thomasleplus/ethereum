@@ -179,3 +179,12 @@ ollama.yaml
 .env
 *.log
 *.tmp
+
+# Solidity
+# =========================
+
+# Foundry
+cache/
+out/
+lib/
+broadcast/

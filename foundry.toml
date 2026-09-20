@@ -4,3 +4,13 @@ test = "test"
 out = "out"
 libs = ["lib"]
 solc = "0.8.30"
+# The reentrancy guard uses transient storage (EIP-1153), which needs Cancun or later.
+# "prague" is solc 0.8.30's own default, so `forge` and the bare `solc` CI job agree.
+evm_version = "prague"
+
+[invariant]
+runs = 128
+depth = 128
+# The handlers only ever issue calls that should succeed, so an unexpected revert is a finding
+# rather than a silently discarded sequence. Raise runs/depth in CI with FOUNDRY_INVARIANT_RUNS.
+fail_on_revert = true

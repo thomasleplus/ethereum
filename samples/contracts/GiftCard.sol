@@ -12,7 +12,10 @@ contract GiftCard {
     uint256 public balance;
     address public immutable from;
     address public immutable to;
-    bool private locked; // Reentrancy guard
+    // Reentrancy guard. Transient (EIP-1153): it only needs to live for the duration of a
+    // transaction, so it costs ~100 gas per access instead of a cold storage slot, and it
+    // leaves `balance` alone in the contract's only storage slot. Requires Cancun or later.
+    bool private transient locked;
     
     // Events for transparency
     event GiftCardCreated(address indexed from, address indexed to, uint256 amount);
@@ -48,8 +51,16 @@ contract GiftCard {
         _;
     }
     
+    /**
+     * @dev Requires the contract to be solvent, i.e. to hold at least what it owes.
+     *      Deliberately not a strict equality: `receive()` rejects plain transfers, but ether can
+     *      still arrive via `selfdestruct`, a block reward or a beacon-chain withdrawal. Demanding
+     *      `balance == address(this).balance` would let anyone brick the card forever by sending
+     *      it one wei. A surplus is harmless and simply stays out of reach; a deficit is not
+     *      reachable and reverts.
+     */
     modifier validBalance() {
-        if (balance != address(this).balance) revert InvalidBalance();
+        if (address(this).balance < balance) revert InvalidBalance();
         if (balance == 0) revert InsufficientBalance();
         _;
     }
@@ -189,7 +200,10 @@ contract GiftCard {
     }
     
     /**
-     * @dev Check if the contract's state is consistent
+     * @dev Check whether the contract holds exactly what the gift card is worth
+     * @notice A false result means ether was force-fed into the contract (via `selfdestruct`, a
+     *         block reward or a beacon-chain withdrawal). That surplus is unreachable, but it does
+     *         not affect the gift card: every function keeps working on `balance` as usual.
      * @return True if gift card balance matches contract's Ether balance
      */
     function isBalanceConsistent() external view returns (bool) {
